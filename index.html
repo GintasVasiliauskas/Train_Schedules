@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NYT Search</title>
+  <!-- Added link to the jQuery Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+  <!-- Added a link to Bootstrap-->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/momentjs/2.12.0/moment.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="jumbotron"> Train Schedule </div>
+
+
+
+
+
+    <div class="panel panel-default">
+      <div class="panel-heading">Current Trains</div>
+
+      <div class="panel-body">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Train Name</th>
+              <th>Destination</th>
+              <th>Frequency (min)</th>
+              <th>Next Arival</th>
+              <th>Minutes Away</th>
+              <th>Delete?</th>
+            </tr>
+          </thead>
+          <tbody id="results">
+
+
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+
+
+
+    <div class="panel panel-default">
+      <div class="panel-heading">Add Train</div>
+      <form>
+        <div class="form-group">
+          <label for="exampleInputEmail1">Train Name:</label>
+          <input type="search" class="form-control" id="trainName" placeholder="Enter Train Name">
+        </div>
+
+        <div class="form-group">
+          <label for="exampleInputEmail1">Destination:</label>
+          <input type="start" class="form-control" id="destination" placeholder="Enter Destination">
+        </div>
+        <div class="form-group">
+          <label for="exampleInputEmail1">First Train Time (HH:mm)</label>
+          <input type="start" class="form-control" id="trainTime" placeholder="Enter First Train Time">
+        </div>
+        <div class="form-group">
+          <label for="exampleInputEmail1">Frequency</label>
+          <input type="start" class="form-control" id="frequency" placeholder="Enter Frequency">
+        </div>
+
+
+        <button type="submit" id="submit" class="btn btn-primary">Submit</button>
+      </form>
+    </div>
+
+
+  </div>
+
+
+
+  <script src="https://www.gstatic.com/firebasejs/4.5.0/firebase.js"></script>
+  <script>
+    // Initialize Firebase
+    var config = {
+      apiKey: "AIzaSyAMZjv08sGxih-I7PGZ1Sj_8-jEAvAfORs",
+      authDomain: "train-schedule-87392.firebaseapp.com",
+      databaseURL: "https://train-schedule-87392.firebaseio.com",
+      projectId: "train-schedule-87392",
+      storageBucket: "train-schedule-87392.appspot.com",
+      messagingSenderId: "755659452082"
+    };
+    firebase.initializeApp(config);
+
+
+
+
+    var database = firebase.database();
+    var trainName = '';
+    var destination ='';
+    var trainTime = '';
+    var frequency = '';
+
+    $("#submit").on("click", function (){
+      event.preventDefault();
+
+      trainName = $("#trainName").val().trim();
+      destination = $("#destination").val().trim();
+      trainTime = $("#trainTime").val().trim();
+      frequency = $("#frequency").val().trim();
+
+
+      database.ref().push({
+        trainName: trainName,
+        destination: destination,
+        trainTime: trainTime,
+        frequency: frequency
+
+      });
+
+    })
+
+ // Firebase is always watching for changes to the data.
+      // When changes occurs it will print them to console and html
+      database.ref().orderByChild("dateAdded").limitToLast(999999).on("child_added", function(snapshot){
+      // Change the HTML
+      var trainTime = snapshot.val().trainTime;
+      var Format = "HH:mm";
+      var convertedTime = moment(trainTime, Format);
+
+      while (moment()>convertedTime) {
+        convertedTime.add(snapshot.val().frequency,"m")
+        console.log('cc')
+      }
+
+      $("#results").append("<tr> <td>" + snapshot.val().trainName + "</td>" +
+        "<td>" + snapshot.val().destination + "</td>" +
+        "<td>" + snapshot.val().frequency + "</td>" +
+        "<td>" + moment(convertedTime).format("HH:mm") + "</td>" +
+        "<td>" +  moment.duration(convertedTime.diff(moment(),"m"),"m").humanize() + "</td>"  +
+        "<td>" + "<button type='button' class='btn btn-default' value='"+snapshot.key +
+        "'> <span class='glyphicon glyphicon-remove' aria-hidden='true'></span> </button> </td>"+ "</tr>");
+    });
+
+    $(document).on("click",".btn",function(){
+      database.ref().child(this.value).remove();
+      location.reload();
+    })
+
+
+
+
+
+
+      // If any errors are experienced, log them to console.
+
+
+
+
+    </script>
+
+
+  </body>
+  </html>
